@@ -1,4 +1,4 @@
-name: Build Android (EAS)
+name: Build APK
 
 on:
   workflow_dispatch:
@@ -11,29 +11,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 18
       
-      - name: Check EXPO_TOKEN
-        run: |
-          if [ -z "$EXPO_TOKEN" ]; then
-            echo "❌ EXPO_TOKEN is NOT set"
-            exit 1
-          else
-            echo "✅ EXPO_TOKEN is set"
-          fi
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      - run: npm install --legacy-peer-deps
       
-      - name: Install dependencies
-        run: npm install --legacy-peer-deps
-      
-      - name: Install EAS CLI globally
-        run: npm install -g eas-cli
-      
-      - name: Build Android APK
-        run: eas build --platform android --non-interactive --wait --profile production
+      - run: npx eas-cli build --platform android --non-interactive --wait --profile production
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
