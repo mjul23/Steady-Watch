@@ -4,16 +4,19 @@ import Constants from "expo-constants";
 import * as Notifications from "expo-notifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-/* === CONFIG PERSONNALISÉE POUR TOI === */
+/* === CONFIG PERSONNALISÉE === */
 const DEFAULT_COLLECTION_SYMBOL = "steadyteddys";
 const DEFAULT_TRAIT_NAME = "Clothing";
 const DEFAULT_TRAIT_VALUE = "Saudi";
 const DEFAULT_THRESHOLD = 200;
 const POLL_INTERVAL_MS = 30_000; // 30s
 
-// Notifications handler: show alert, play no sound (user requested "sansson")
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({ shouldShowAlert: true, shouldPlaySound: false, shouldSetBadge: false }),
+  handleNotification: async () => ({ 
+    shouldShowAlert: true, 
+    shouldPlaySound: false, 
+    shouldSetBadge: false 
+  }),
 });
 
 export default function App() {
@@ -34,18 +37,22 @@ export default function App() {
         parsed.forEach(a => seenIdsRef.current.add(a.listingId || `${a.tokenId}-${a.seller}`));
       }
     })();
+    
     registerForPushNotificationsAsync();
     return () => stopPolling();
   }, []);
 
   async function registerForPushNotificationsAsync() {
     if (!Constants.isDevice) return;
+    
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
+    
     if (existingStatus !== "granted") {
       const { status } = await Notifications.requestPermissionsAsync();
       finalStatus = status;
     }
+    
     if (finalStatus !== "granted") {
       Alert.alert("Notifications désactivées", "Autorise les notifications pour recevoir les alertes.");
     }
@@ -53,7 +60,10 @@ export default function App() {
 
   async function notifyLocal(title, body) {
     if (Platform.OS === "android") Vibration.vibrate(500);
-    await Notifications.scheduleNotificationAsync({ content: { title, body }, trigger: null });
+    await Notifications.scheduleNotificationAsync({ 
+      content: { title, body }, 
+      trigger: null 
+    });
   }
 
   async function saveAlert(a) {
@@ -80,13 +90,15 @@ export default function App() {
   async function pollOnce() {
     const symbol = DEFAULT_COLLECTION_SYMBOL;
     const url = `https://api-mainnet.magiceden.io/v2/collections/${encodeURIComponent(symbol)}/listings`;
+    
     try {
       const resp = await fetch(url, { method: "GET" });
       if (!resp.ok) return;
+      
       const data = await resp.json();
       const listings = Array.isArray(data) ? data : data.listings || data;
       const thr = parseFloat(threshold) || DEFAULT_THRESHOLD;
-
+      
       for (const l of listings) {
         const tokenId = l.tokenId || l.tokenMint || l.token || l.itemId || null;
         const price = (() => {
@@ -94,6 +106,7 @@ export default function App() {
           if (l.price && !isNaN(Number(l.price))) return Number(l.price);
           return Number(l?.priceInLamports || 0);
         })();
+        
         const metadata = l.extra || l.metadata || l;
         const attributes = metadata?.attributes || metadata?.traits || [];
         const hasTrait = attributes.some(a => {
@@ -101,7 +114,7 @@ export default function App() {
           const v = (a.value || a.val || a.trait_value || "").toString();
           return k.toLowerCase() === traitName.toLowerCase() && v.toLowerCase() === traitValue.toLowerCase();
         });
-
+        
         if (hasTrait && price <= thr) {
           const listingId = l.listingId || `${tokenId}-${l.seller || "s"}`;
           if (!seenIdsRef.current.has(listingId)) {
@@ -126,23 +139,45 @@ export default function App() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>🧸 Steady Watch</Text>
-
+      
       <View style={styles.row}>
-        <TextInput style={styles.input} value={traitName} onChangeText={setTraitName} placeholder="Trait name" />
-        <TextInput style={styles.input} value={traitValue} onChangeText={setTraitValue} placeholder="Trait value" />
+        <TextInput 
+          style={styles.input}
+          placeholder="Trait"
+          value={traitName}
+          onChangeText={setTraitName}
+          placeholderTextColor="#999"
+        />
+        <TextInput 
+          style={styles.input}
+          placeholder="Value"
+          value={traitValue}
+          onChangeText={setTraitValue}
+          placeholderTextColor="#999"
+        />
       </View>
-
+      
       <View style={styles.row}>
-        <TextInput style={[styles.input, {flex:1}]} value={threshold} onChangeText={setThreshold} keyboardType="numeric" />
-        <TouchableOpacity style={monitoring ? styles.stopButton : styles.startButton} onPress={() => monitoring ? stopPolling() : startPolling()}>
+        <TextInput 
+          style={styles.input}
+          placeholder="Threshold"
+          value={threshold}
+          onChangeText={setThreshold}
+          keyboardType="numeric"
+          placeholderTextColor="#999"
+        />
+        <TouchableOpacity 
+          style={monitoring ? styles.stopButton : styles.startButton}
+          onPress={() => monitoring ? stopPolling() : startPolling()}
+        >
           <Text style={styles.btnText}>{monitoring ? "⏸ Stop" : "▶️ Start"}</Text>
         </TouchableOpacity>
       </View>
-
+      
       <Text style={styles.h2}>Alertes récentes</Text>
-      <FlatList
+      <FlatList 
         data={alerts}
-        keyExtractor={(it) => it.listingId}
+        keyExtractor={it => it.listingId}
         renderItem={({ item }) => (
           <View style={styles.alertItem}>
             <Text style={styles.alertText}>#{item.tokenId} — {item.price} BERA</Text>
@@ -155,15 +190,15 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex:1, padding:16, paddingTop:50, backgroundColor:"#0b1220" },
-  title: { fontSize:22, fontWeight:"700", color:"#fff", marginBottom:12, textAlign:"center" },
-  row: { flexDirection:"row", gap:8, marginBottom:10 },
-  input: { backgroundColor:"#fff", padding:10, borderRadius:8, flex:0.5, marginRight:6 },
-  startButton: { backgroundColor:"#10b981", padding:12, borderRadius:8, justifyContent:"center", alignItems:"center" },
-  stopButton: { backgroundColor:"#ef4444", padding:12, borderRadius:8, justifyContent:"center", alignItems:"center" },
-  btnText: { color:"#fff", fontWeight:"700" },
-  h2: { color:"#fff", marginTop:12, marginBottom:6, fontWeight:"700" },
-  alertItem: { backgroundColor:"#111827", padding:10, borderRadius:8, marginBottom:8 },
-  alertText: { color:"#fff", fontSize:16 },
-  small: { color:"#9ca3af", fontSize:12, marginTop:4 }
+  container: { flex: 1, padding: 16, paddingTop: 50, backgroundColor: "#0b1220" },
+  title: { fontSize: 22, fontWeight: "700", color: "#fff", marginBottom: 12, textAlign: "center" },
+  row: { flexDirection: "row", gap: 8, marginBottom: 10 },
+  input: { backgroundColor: "#fff", padding: 10, borderRadius: 8, flex: 0.5, marginRight: 6, color: "#000" },
+  startButton: { backgroundColor: "#10b981", padding: 12, borderRadius: 8, justifyContent: "center", alignItems: "center" },
+  stopButton: { backgroundColor: "#ef4444", padding: 12, borderRadius: 8, justifyContent: "center", alignItems: "center" },
+  btnText: { color: "#fff", fontWeight: "700" },
+  h2: { color: "#fff", marginTop: 12, marginBottom: 6, fontWeight: "700" },
+  alertItem: { backgroundColor: "#111827", padding: 10, borderRadius: 8, marginBottom: 8 },
+  alertText: { color: "#fff", fontSize: 16 },
+  small: { color: "#9ca3af", fontSize: 12, marginTop: 4 }
 });
