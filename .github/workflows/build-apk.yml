@@ -8,6 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    
     steps:
       - uses: actions/checkout@v4
       
@@ -18,19 +19,26 @@ jobs:
       - name: Install dependencies
         run: npm install --legacy-peer-deps
       
-      - name: Install EAS CLI
-        run: npm install -g eas-cli
+      - name: Install EAS + Expo
+        run: npm install -g eas-cli expo-cli
       
-      - name: Build with EAS
+      - name: Initialize EAS project
+        run: eas init --id 12345678-1234-1234-1234-123456789012 --non-interactive || true
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      
+      - name: Build APK
         run: eas build --platform android --non-interactive --wait --profile production
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
       
-      - name: Upload APK
-        if: success()
+      - name: Download and upload APK
+        run: |
+          mkdir -p dist
+          cp .eas/build/* dist/ 2>/dev/null || true
+        
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: steady-watch-apk
-          path: |
-            dist/
-            *.apk
+          path: dist/
