@@ -16,14 +16,22 @@ jobs:
         with:
           node-version: 18
       
+      - name: Check EXPO_TOKEN
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "❌ EXPO_TOKEN is NOT set"
+            exit 1
+          else
+            echo "✅ EXPO_TOKEN is set"
+          fi
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      
       - name: Install dependencies
         run: npm install --legacy-peer-deps
       
       - name: Install EAS CLI globally
-        run: npm install -g eas-cli@latest
-      
-      - name: Verify EAS CLI
-        run: eas --version
+        run: npm install -g eas-cli
       
       - name: Build Android APK
         run: eas build --platform android --non-interactive --wait --profile production
