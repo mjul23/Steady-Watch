@@ -1,0 +1,21 @@
+{
+  "name": "steady-watch",
+  "version": "1.0.0",
+  "main": "App.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo run:android",
+    "build:android": "eas build -p android --profile production"
+  },
+  "dependencies": {
+    "expo": "~49.0.0",
+    "expo-notifications": "~0.19.0",
+    "expo-status-bar": "~1.6.0",
+    "react": "18.2.0",
+    "react-native": "0.72.3",
+    "@react-native-async-storage/async-storage": "^1.19.0"
+  },
+  "devDependencies": {
+    "eas-cli": "^1.80.0"
+  }
+}

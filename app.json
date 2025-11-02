@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "Steady Watch",
+    "slug": "steady-watch",
+    "version": "1.0.0",
+    "sdkVersion": "49.0.0",
+    "platforms": [
+      "android"
+    ],
+    "icon": "./assets/icon.png",
+    "orientation": "portrait",
+    "android": {
+      "package": "com.steady.watch",
+      "versionCode": 1,
+      "permissions": [
+        "VIBRATE",
+        "WAKE_LOCK"
+      ]
+    }
+  }
+}
