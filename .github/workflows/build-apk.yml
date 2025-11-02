@@ -17,9 +17,19 @@ jobs:
           node-version: 18
       
       - name: Install dependencies
-        run: npm ci
+        run: npm install
+      
+      - name: Install EAS CLI
+        run: npm install -g eas-cli@latest
       
       - name: Build with EAS
         run: npx eas build --platform android --non-interactive --wait --profile production
         env:
           EAS_TOKEN: ${{ secrets.EAS_TOKEN }}
+      
+      - name: Upload artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: steady-watch-apk
+          path: dist/
