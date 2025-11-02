@@ -16,29 +16,22 @@ jobs:
         with:
           node-version: 18
       
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      
       - name: Install dependencies
         run: npm install --legacy-peer-deps
       
-      - name: Install EAS + Expo
-        run: npm install -g eas-cli expo-cli
-      
-      - name: Initialize EAS project
-        run: eas init --id 12345678-1234-1234-1234-123456789012 --non-interactive || true
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-      
-      - name: Build APK
-        run: eas build --platform android --non-interactive --wait --profile production
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-      
-      - name: Download and upload APK
+      - name: Build Android App
         run: |
-          mkdir -p dist
-          cp .eas/build/* dist/ 2>/dev/null || true
-        
-      - name: Upload artifact
+          npm install -g eas-cli expo-cli
+          npx expo prebuild --platform android --clean
+          cd android && ./gradlew assembleRelease
+      
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: steady-watch-apk
-          path: dist/
+          path: android/app/build/outputs/apk/release/*.apk
