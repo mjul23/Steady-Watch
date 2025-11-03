@@ -33,7 +33,7 @@ jobs:
       - name: Prebuild
         run: npx expo prebuild --platform android --clean
       
-      - name: Fix compileSdkVersion in android/build.gradle
+      - name: Fix android/build.gradle
         run: |
           cat > android/build.gradle << 'EOF'
           buildscript {
@@ -43,6 +43,8 @@ jobs:
                   compileSdkVersion = 33
                   targetSdkVersion = 33
                   ndkVersion = "23.1.7779620"
+                  frescoVersion = "2.5.0"
+                  kotlinVersion = "1.8.0"
               }
               repositories {
                   google()
@@ -51,6 +53,7 @@ jobs:
               dependencies {
                   classpath("com.android.tools.build:gradle:7.4.2")
                   classpath("com.facebook.react:react-native-gradle-plugin")
+                  classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
               }
           }
 
@@ -63,7 +66,7 @@ jobs:
           }
           EOF
       
-      - name: Fix expo-notifications build.gradle
+      - name: Fix expo-notifications
         run: |
           if [ -f "node_modules/expo-notifications/android/build.gradle" ]; then
             sed -i 's/classifier = /archiveClassifier = /g' node_modules/expo-notifications/android/build.gradle
@@ -71,9 +74,12 @@ jobs:
       
       - name: Add gradle properties
         run: |
-          echo "android.useAndroidX=true" >> android/gradle.properties
-          echo "android.enableJetifier=true" >> android/gradle.properties
-          echo "org.gradle.jvmargs=-Xmx4096m" >> android/gradle.properties
+          cat >> android/gradle.properties << 'EOF'
+          android.useAndroidX=true
+          android.enableJetifier=true
+          org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=512m
+          org.gradle.daemon=false
+          EOF
       
       - name: Build APK
         run: |
