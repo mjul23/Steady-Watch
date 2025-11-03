@@ -24,11 +24,62 @@ jobs:
       - name: Install dependencies
         run: npm install --legacy-peer-deps
       
-      - name: Build Android App
+      - name: Install Expo CLI
+        run: npm install -g expo-cli@6.3.10
+      
+      - name: Remove icon
+        run: rm -f icon.jpg
+      
+      - name: Prebuild
+        run: npx expo prebuild --platform android --clean
+      
+      - name: Fix compileSdkVersion in android/build.gradle
         run: |
-          npm install -g eas-cli expo-cli
-          npx expo prebuild --platform android --clean
-          cd android && ./gradlew assembleRelease
+          cat > android/build.gradle << 'EOF'
+          buildscript {
+              ext {
+                  buildToolsVersion = "33.0.0"
+                  minSdkVersion = 21
+                  compileSdkVersion = 33
+                  targetSdkVersion = 33
+                  ndkVersion = "23.1.7779620"
+              }
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+              dependencies {
+                  classpath("com.android.tools.build:gradle:7.4.2")
+                  classpath("com.facebook.react:react-native-gradle-plugin")
+              }
+          }
+
+          allprojects {
+              repositories {
+                  maven { url "$rootDir/../node_modules/expo-camera/android/maven" }
+                  google()
+                  mavenCentral()
+              }
+          }
+          EOF
+      
+      - name: Fix expo-notifications build.gradle
+        run: |
+          if [ -f "node_modules/expo-notifications/android/build.gradle" ]; then
+            sed -i 's/classifier = /archiveClassifier = /g' node_modules/expo-notifications/android/build.gradle
+          fi
+      
+      - name: Add gradle properties
+        run: |
+          echo "android.useAndroidX=true" >> android/gradle.properties
+          echo "android.enableJetifier=true" >> android/gradle.properties
+          echo "org.gradle.jvmargs=-Xmx4096m" >> android/gradle.properties
+      
+      - name: Build APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon --stacktrace
       
       - name: Upload APK
         uses: actions/upload-artifact@v4
