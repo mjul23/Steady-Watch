@@ -4,12 +4,14 @@
     "slug": "steady-watch",
     "version": "1.0.0",
     "platforms": ["android"],
-    "icon": "./assets/icon.png",
     "orientation": "portrait",
     "android": {
       "package": "com.steady.watch",
       "versionCode": 1,
-      "permissions": ["VIBRATE", "WAKE_LOCK"]
+      "permissions": ["VIBRATE", "WAKE_LOCK"],
+      "adaptiveIcon": {
+        "backgroundColor": "#FFFFFF"
+      }
     }
   }
 }
